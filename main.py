@@ -27,30 +27,7 @@ RABIN_EXCEPTIONS = {
 }
 
 
-class RNG:
-
-    A = gmpy2.mpz(1103515245)
-    B = gmpy2.mpz(12345)
-    M = gmpy2.mpz(0x7fffffff)
-
-    def __init__(self):
-        self.seed = gmpy2.mpz(1)
-
-
-    def next_31_bit(self):
-        self.seed = (self.A * self.seed + self.B) % self.M
-        return self.seed
-
-
-    def next_range(self, bound):
-        width = bound.bit_length()
-        result = gmpy2.mpz(0)
-        for pos in range(0, width, 31):
-            result = (result << 31) | self.next_31_bit()
-        return result % bound
-
-
-def get_remainders(a, b, bound):
+def euclid_filtered(a, b, bound):
     bound_sqrt = gmpy2.isqrt(bound)
     result = []
     while b != 0:
@@ -67,20 +44,21 @@ def two_squares(p):
     elif p == 2:
         return [1, 1, 0, 0]
 
-    rng = RNG()
+    rng = gmpy2.random_state(1)
     while True:
-        q = rng.next_range(p)
+        q = gmpy2.mpz_random(rng, p)
         while gmpy2.powmod(q, (p - 1) // 2, p) != p - 1:
-            q = rng.next_range(p)
+            q = gmpy2.mpz_random(rng, p)
         x = gmpy2.powmod(q, (p - 1) // 4, p)
-        rems = get_remainders(p, x, p)
-        if len(rems) >= 2:
+        rems = euclid_filtered(p, x, p)
+        if  len(rems) > 2:
             break
 
     return [rems[0], rems[1], 0, 0]
 
 def three_squares(n):
     n = gmpy2.mpz(n)
+    rng = gmpy2.random_state(1)
     if n in RABIN_EXCEPTIONS:
         return RABIN_EXCEPTIONS[n]
     elif n % 4 == 0:
@@ -89,9 +67,9 @@ def three_squares(n):
     elif n % 8 == 7:
         return [0, 0 , 0, 0]
     elif n % 8 == 3:
-        rng = RNG()
+        
         while True:
-            x = rng.next_range(gmpy2.isqrt(n) + 1)
+            x = gmpy2.mpz_random(rng, gmpy2.isqrt(n) + 1)
             p = (n - x * x) // 2
             if not((n - x * x) % 2 != 0 or not (gmpy2.is_prime(p) or p == 1)):
                 break
@@ -100,9 +78,8 @@ def three_squares(n):
     elif gmpy2.is_square(n):
         return [gmpy2.isqrt(n), 0, 0, 0]
     else:
-        rng = RNG()
         while True:
-            x = rng.next_range(gmpy2.isqrt(n) + 1)
+            x = gmpy2.mpz_random(rng, gmpy2.isqrt(n) + 1)
             p = (n - x * x)
             if gmpy2.is_prime(p):
                 break
@@ -113,14 +90,14 @@ def three_squares(n):
 def four_squares(n: int):
     n = gmpy2.mpz(n)
 
-    if n == 0:
-        return [0, 0, 0, 0]
-    elif n == 1:
+    if n == 1:
         return [1, 0, 0, 0]
     elif n == 2:
         return [1, 1, 0, 0]
     elif n == 3:
         return [1, 1, 1, 0]
+    elif n == 0:
+        return [0, 0, 0, 0]
 
     if n % 4 == 0:
         sub = four_squares(n // 4)
