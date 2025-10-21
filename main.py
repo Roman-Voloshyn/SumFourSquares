@@ -74,7 +74,7 @@ def two_squares(p):
             q = rng.next_range(p)
         x = gmpy2.powmod(q, (p - 1) // 4, p)
         rems = get_remainders(p, x, p)
-        if not len(rems) <= 2:
+        if len(rems) >= 2:
             break
 
     return [rems[0], rems[1], 0, 0]
@@ -113,7 +113,9 @@ def three_squares(n):
 def four_squares(n: int):
     n = gmpy2.mpz(n)
 
-    if n == 1:
+    if n == 0:
+        return [0, 0, 0, 0]
+    elif n == 1:
         return [1, 0, 0, 0]
     elif n == 2:
         return [1, 1, 0, 0]
